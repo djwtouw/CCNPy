@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=42", "wheel", "pybind11~=2.12.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ccnpy"
+version = "0.1"
+description = "Implementation of the classifier chain network for multi-label classification"
+authors = [{name = "Daniel Touw", email = "touw@ese.eur.nl"}]
+license = {file = "LICENSE"}
+requires-python = ">=3.12"
+readme = "README.md"
+dependencies = [
+    "loky>=3.4.1",
+    "numpy>=1.23",
+    "scikit-learn"
+]
