@@ -90,6 +90,6 @@ print(f"Accuracy: {accuracy(Y_test, Y_hat_cv):.4f}")
 
 ## Dependencies and Licenses
 
-This project uses the Eigen C++ library for linear algebra operations, which is licensed under the [MPL2.0](https://www.mozilla.org/en-US/MPL/2.0/) license. The Eigen source files that are included in this repository can be found in the `cpp/include/Eigen/` subdirectory. For more information about Eigen, including documentation and usage examples, please visit the [Eigen website](http://eigen.tuxfamily.org/).
+This project uses the Eigen C++ library for linear algebra operations, which is licensed under the [MPL2.0](https://www.mozilla.org/en-US/MPL/2.0/) license. For more information about Eigen, including documentation and usage examples, please visit the [Eigen website](http://eigen.tuxfamily.org/).
 
-In addition, this project is licensed under the GNU General Public License version 3 (GPLv3). The GPLv3 is a widely-used free software license that requires derivative works to be licensed under the same terms. The full text of the GPLv3 can be found in the `ccmmpy/LICENSE` file.
+In addition, this project is licensed under the GNU General Public License version 3 (GPLv3). The GPLv3 is a widely-used free software license that requires derivative works to be licensed under the same terms. The full text of the GPLv3 can be found in the `LICENSE` file.
