@@ -11,7 +11,7 @@ license = {file = "LICENSE"}
 requires-python = ">=3.12"
 readme = "README.md"
 dependencies = [
-    "loky>=3.4.1",
     "numpy>=1.23",
+    "pandas>=2.2.2",
     "scikit-learn"
 ]
