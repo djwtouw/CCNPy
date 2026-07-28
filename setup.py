@@ -1,61 +1,65 @@
+"""Build the CCNPy C++ extension (ccnpy._core).
+
+The algorithm lives in the framework-agnostic core under ``ccncpp/``. This file
+only compiles that core together with the thin pybind11 binding in
+``src/ccnpy/_binding.cpp``.
+
+Eigen is located, in order, from:
+
+1. the ``EIGEN_INCLUDE_DIR`` environment variable,
+2. a vendored copy at ``extern/eigen`` (e.g. a git submodule),
+3. common system locations.
+
+The directory must be the one that *contains* the ``Eigen/`` header folder.
+"""
+
 import os
-import pybind11
-import setuptools
-import shutil
-import subprocess
-from setuptools import setup, Extension
-from setuptools.command.build_ext import build_ext
+import sys
+from glob import glob
+
+from pybind11.setup_helpers import Pybind11Extension, build_ext
+from setuptools import setup
+
+HERE = os.path.abspath(os.path.dirname(__file__))
 
 
-class DownloadEigen(build_ext):
-    def run(self):
-        eigen_dir = os.path.join(self.build_temp, "eigen-src")
-        if not os.path.exists(eigen_dir):
-            subprocess.check_call([
-                "git", "clone", "--depth", "1",
-                "--branch", "3.4.0",
-                "https://gitlab.com/libeigen/eigen.git", eigen_dir
-            ])
-
-        # Destination in build tree
-        include_dst = os.path.join(self.build_temp, "cpp", "include", "Eigen")
-        eigen_include_src = os.path.join(eigen_dir, "Eigen")
-        os.makedirs(os.path.dirname(include_dst), exist_ok=True)
-
-        # Copy Eigen headers
-        if os.path.exists(include_dst):
-            shutil.rmtree(include_dst)
-        shutil.copytree(eigen_include_src, include_dst)
-
-        # Set include dirs
-        for ext in self.extensions:
-            ext.include_dirs.append(os.path.join(eigen_dir))
-        super().run()
+def find_eigen() -> str:
+    candidates = []
+    env = os.environ.get("EIGEN_INCLUDE_DIR")
+    if env:
+        candidates.append(env)
+    candidates.append(os.path.join(HERE, "extern", "eigen"))
+    candidates += [
+        "/usr/include/eigen3",
+        "/usr/local/include/eigen3",
+        "/opt/homebrew/include/eigen3",
+    ]
+    for path in candidates:
+        if path and os.path.exists(os.path.join(path, "Eigen", "Dense")):
+            return path
+    raise RuntimeError(
+        "Could not locate Eigen. Set EIGEN_INCLUDE_DIR to the directory "
+        "containing the 'Eigen/' header folder, vendor it at extern/eigen "
+        "(e.g. `git submodule update --init`), or install it system-wide."
+    )
 
 
-if r"MSC" in pybind11.sys.version:
-    # cpp_args = ["/std:c++17", "/DEBUG"] # Debug
-    cpp_args = ["/std:c++17", "/NDEBUG", "/Ox"] # Release
-else:
-    cpp_args = ["-std=c++17", "-UNDEBUG", "-O3"]
-
-package_name = "ccnpy"
+core_sources = sorted(glob(os.path.join("ccncpp", "src", "*.cpp")))
+binding_sources = [os.path.join("src", "ccnpy", "_binding.cpp")]
 
 ext_modules = [
-    Extension(
-        f"{package_name}._{package_name}",
-        ["cpp/src/" + file for file in os.listdir("cpp/src")],
-        include_dirs=[
-            "pybind11/include", "cpp/include", pybind11.get_include()
-        ],
-        language="c++",
-        extra_compile_args=cpp_args,
-    ),
+    Pybind11Extension(
+        "ccnpy._core",
+        sources=binding_sources + core_sources,
+        include_dirs=[os.path.join("ccncpp", "include"), find_eigen()],
+        cxx_std=17,
+        define_macros=[("NDEBUG", "1")],
+    )
 ]
 
-setup(
-    ext_modules=ext_modules,
-    cmdclass={"build_ext": DownloadEigen},
-    packages=setuptools.find_packages(),
-    zip_safe=False
-)
+# Optional release optimization flags (pybind11 already sets a sane baseline).
+if not sys.platform.startswith("win"):
+    for ext in ext_modules:
+        ext.extra_compile_args = (ext.extra_compile_args or []) + ["-O3"]
+
+setup(ext_modules=ext_modules, cmdclass={"build_ext": build_ext})
