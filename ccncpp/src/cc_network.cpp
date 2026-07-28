@@ -1,17 +1,8 @@
-#include <utility>
-#include <iostream>
-#include <pybind11/pybind11.h>
-#include <pybind11/numpy.h>
-#include <pybind11/eigen.h>
-
-#include "Eigen/Eigen"
+#include <Eigen/Dense>
 #include "cc_network.h"
 #include "ccn_components.h"
 #include "loss_components.h"
 #include "loss_constants.h"
-
-
-using namespace pybind11::literals;
 
 
 struct CCNUpdateResults {
@@ -398,7 +389,7 @@ ccn_update_hessian_inverse(Eigen::MatrixXd& H,
 /**
  * @brief Minimize the loss associated with the classifier chain network.
  *
- * @param X X The data matrix, where each column holds the features of a single
+ * @param X The data matrix, where each column holds the features of a single
  * observation.
  * @param Y The outcome matrix.
  * @param params_vec The initial estimate of the model parameters.
@@ -414,7 +405,7 @@ ccn_update_hessian_inverse(Eigen::MatrixXd& H,
  * @param heaviside_t The threshold parameter, for p > t -> heaviside(p) > 0.5.
  * @return The optimization results.
  */
-pybind11::dict
+CCNResult
 ccn_logistic(const Eigen::MatrixXd& X, const Eigen::MatrixXd& Y,
              const Eigen::VectorXd& params_vec, double q, double alpha,
              double c1, double c2, double tol, std::string loss_type,
@@ -483,16 +474,37 @@ ccn_logistic(const Eigen::MatrixXd& X, const Eigen::MatrixXd& Y,
                     ccn_loss_gradient(X, Y, params1, q, alpha, lc);
             H = Eigen::MatrixXd::Identity(params1.size, params1.size);
         }
-
-        /*pybind11::print(
-            "loss = {:.5f} | step size = {:.5f}"_s.format(loss1, wolfe_update.step_size)
-        );*/
     }
 
     // Construct the result
-    pybind11::dict result;
-    result["params"] = params1.flatten();
-    result["loss"] = loss1;
+    CCNResult result { params1.flatten(), loss1 };
+
+    return result;
+}
+
+
+/**
+ * @brief Minimize the loss associated with the classifier chain network.
+ *
+ * @param X The data matrix, where each column holds the features of a single
+ * observation.
+ * @param params_vec The initial estimate of the model parameters.
+ * @param L The number of labels.
+ * @return The prediction.
+ */
+Eigen::MatrixXd
+ccn_prediction(const Eigen::MatrixXd& X, const Eigen::VectorXd& params_vec,
+               int L)
+{
+    int n = int(X.cols());
+    int m = int(X.rows());
+    CCNParams params(params_vec, m, L);
+    Eigen::MatrixXd result(L, n);
+
+    for (int i = 0; i < n; i++) {
+        auto [z, p] = compute_z_and_p(X.col(i), params);
+        result.col(i) = p;
+    }
 
     return result;
 }

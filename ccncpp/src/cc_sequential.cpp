@@ -1,17 +1,10 @@
 #include <utility>
 #include <iostream>
 #include <algorithm>
-#include <pybind11/pybind11.h>
-#include <pybind11/numpy.h>
-#include <pybind11/eigen.h>
 #include <string>
-
-#include "Eigen/Eigen"
+#include <Eigen/Dense>
 #include "loss_components.h"
 #include "loss_constants.h"
-
-
-using namespace pybind11::literals;
 
 
 struct UpdateResults {
@@ -369,10 +362,6 @@ ccs_logistic(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, double alpha,
                     ccs_loss_gradient(X, y, params1, alpha, lc);
             H = Eigen::MatrixXd::Identity(params1.size(), params1.size());
         }
-
-        /*pybind11::print(
-            "loss = {:.5f} | step size = {:.5f}"_s.format(loss1, wolfe_update.step_size)
-        );*/
     }
 
     return params1;

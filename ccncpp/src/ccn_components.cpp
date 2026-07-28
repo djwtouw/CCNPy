@@ -1,4 +1,4 @@
-#include "Eigen/Eigen"
+#include <Eigen/Dense>
 #include "ccn_components.h"
 
 

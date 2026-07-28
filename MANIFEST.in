@@ -1,0 +1,18 @@
+include LICENSE
+include README.md
+include pyproject.toml setup.py
+
+# The C++ core and pybind11 binding must ship in the sdist so it can be built
+# from source.
+recursive-include ccncpp *.h *.cpp
+recursive-include src/ccnpy *.cpp
+
+# Vendored Eigen, when present (git submodule at extern/eigen).
+recursive-include extern/eigen *
+
+# Runnable example scripts.
+recursive-include examples *.py
+
+prune tests
+global-exclude *.so *.o *.pyc
+global-exclude __pycache__
