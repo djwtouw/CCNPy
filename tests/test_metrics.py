@@ -45,6 +45,19 @@ def test_log_likelihood_higher_for_confident_correct():
     assert good > bad
 
 
+def test_log_likelihood_averages_over_label_observation_pairs():
+    y_true = np.array([[1, 0], [0, 1]])
+    y_prob = np.array([[0.8, 0.3], [0.4, 0.7]])
+    expected = np.mean(y_true * np.log(y_prob) +
+                       (1 - y_true) * np.log(1 - y_prob))
+    assert metrics.log_likelihood(y_true, y_prob) == pytest.approx(expected)
+
+
+def test_log_likelihood_is_finite_at_the_probability_bounds():
+    y_true = np.array([[1, 0]])
+    assert np.isfinite(metrics.log_likelihood(y_true, np.array([[0.0, 1.0]])))
+
+
 def test_mean_auc_perfect_separation():
     y_true = np.array([[0], [0], [1], [1]])
     y_prob = np.array([[0.1], [0.2], [0.8], [0.9]])

@@ -37,11 +37,12 @@ def macro_f1(y_true, y_pred):
                           average="macro", zero_division=0))
 
 
-def log_likelihood(y_true, y_prob, eps=1e-15):
-    """Mean per-observation log-likelihood under the predicted probabilities."""
+def log_likelihood(y_true, y_prob):
+    """Mean per-label log-likelihood under the predicted probabilities."""
+    eps = 1e-15
     y_true, y_prob = _as2d(y_true), _as2d(y_prob)
     p = np.clip(y_prob, eps, 1 - eps)
-    return float((y_true * np.log(p) + (1 - y_true) * np.log(1 - p)).sum(1).mean())
+    return float((y_true * np.log(p) + (1 - y_true) * np.log(1 - p)).mean())
 
 
 def mean_auc(y_true, y_prob):
