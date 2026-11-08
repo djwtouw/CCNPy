@@ -5,7 +5,7 @@ scikit-learn API (``fit`` / ``predict`` / ``predict_proba``).
 """
 
 from . import metrics
-from .datasets import generate_dataset
+from .datasets import generate_dataset, load_amphibians
 from .estimator import CCN
 from .label_order import conditional_entropy_matrix, entropy_label_order
 from .model_selection import MultilabelStratifiedKFold, ccn_cv
@@ -19,5 +19,6 @@ __all__ = [
     "conditional_entropy_matrix",
     "entropy_label_order",
     "generate_dataset",
+    "load_amphibians",
     "metrics",
 ]

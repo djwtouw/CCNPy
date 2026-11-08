@@ -23,6 +23,7 @@ doi: [10.1016/j.eswa.2025.128048](https://doi.org/10.1016/j.eswa.2025.128048)
 - [Example](#example)
 - [Cross-validation](#cross-validation)
 - [Label order](#label-order)
+- [A complete analysis](#a-complete-analysis)
 - [Development](#development)
 - [Dependencies and licenses](#dependencies-and-licenses)
 - [Citation](#citation)
@@ -180,6 +181,20 @@ X. Jun, Y. Lu, Z. Lei and D. Guolun (2019). *Conditional entropy based
 classifier chains for multi-label classification*. Neurocomputing, 335, 185-194.
 doi: [10.1016/j.neucom.2019.01.039](https://doi.org/10.1016/j.neucom.2019.01.039)
 
+## A complete analysis
+
+[`examples/example_amphibians.py`](examples/example_amphibians.py) walks through
+a full analysis of a real data set: the presence of seven amphibian species at
+189 water reservoirs in Poland, loaded with `load_amphibians()`. The script
+fits a model, chooses the label order, selects `q`, `alpha`, and the label order
+by cross-validation on stratified folds, evaluates the predictions on held-out
+sites with a default and a per-label threshold, and inspects the estimated label
+interdependencies.
+
+```bash
+python examples/example_amphibians.py
+```
+
 ## Correspondence with CCNR
 
 | CCNR (R) | CCNPy (Python) |
@@ -191,6 +206,7 @@ doi: [10.1016/j.neucom.2019.01.039](https://doi.org/10.1016/j.neucom.2019.01.039
 | `ccn_cv(...)` | `ccn_cv(...)` or `GridSearchCV` |
 | `ccn_hamming_accuracy`, ... | `ccnpy.metrics.*` |
 | `generate_dataset(n)` | `generate_dataset(n)` |
+| `data(amphibians)` | `load_amphibians()` |
 | `entropy_label_order(y, method)` | `entropy_label_order(Y, method=...)` |
 | `conditional_entropy_matrix(y)` | `conditional_entropy_matrix(Y)` |
 

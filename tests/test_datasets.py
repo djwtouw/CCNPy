@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from ccnpy import generate_dataset
+from ccnpy import generate_dataset, load_amphibians
 
 
 def test_shapes_and_binary():
@@ -28,3 +28,23 @@ def test_different_seeds_differ():
 def test_invalid_n(n):
     with pytest.raises(ValueError):
         generate_dataset(n)
+
+
+def test_load_amphibians():
+    data = load_amphibians()
+    assert data.data.shape == (189, 25)
+    assert data.target.shape == (189, 7)
+    assert set(np.unique(data.target)) == {0, 1}
+    assert data.feature_names[0] == "PC1"
+    assert data.target_names == ["GreenFrog", "BrownFrog", "Toad", "FireToad",
+                                 "TreeFrog", "Newt", "CrestNewt"]
+    # Prevalence of the rarest and the most common species
+    assert data.target.sum(axis=0)[6] == 21
+    assert data.target.sum(axis=0)[1] == 148
+
+
+def test_load_amphibians_return_X_y():
+    X, Y = load_amphibians(return_X_y=True)
+    data = load_amphibians()
+    assert np.array_equal(X, data.data)
+    assert np.array_equal(Y, data.target)
