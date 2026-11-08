@@ -37,10 +37,8 @@ ways shown below.
 
 ### Directly from GitHub
 
-The reworked version currently lives on the `v0.2` branch:
-
 ```bash
-pip install "ccnpy @ git+https://github.com/djwtouw/CCNPy@v0.2"
+pip install "ccnpy @ git+https://github.com/djwtouw/CCNPy"
 ```
 
 pip clones the repository and initializes its submodules, which pulls in the
@@ -52,7 +50,7 @@ GitHub and to gitlab.com (where Eigen is hosted).
 Clone with submodules so Eigen is present, then install:
 
 ```bash
-git clone --branch v0.2 --recurse-submodules https://github.com/djwtouw/CCNPy
+git clone --recurse-submodules https://github.com/djwtouw/CCNPy
 cd CCNPy
 pip install .
 ```
