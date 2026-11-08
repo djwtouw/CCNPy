@@ -1,17 +1,19 @@
 #ifndef CC_NETWORK_H
 #define CC_NETWORK_H
 
-#include <pybind11/pybind11.h>
-#include <pybind11/numpy.h>
-#include <pybind11/eigen.h>
+#include <Eigen/Dense>
 
-#include "Eigen/Eigen"
+
+struct CCNResult {
+    Eigen::VectorXd params;
+    double loss;
+};
 
 
 /**
  * @brief Minimize the loss associated with the classifier chain network.
  *
- * @param X X The data matrix, where each column holds the features of a single
+ * @param X The data matrix, where each column holds the features of a single
  * observation.
  * @param Y The outcome matrix.
  * @param params_vec The initial estimate of the model parameters.
@@ -27,10 +29,23 @@
  * @param heaviside_t The threshold parameter, for p > t -> heaviside(p) > 0.5.
  * @return The optimization results.
  */
-pybind11::dict
+CCNResult
 ccn_logistic(const Eigen::MatrixXd& X, const Eigen::MatrixXd& Y,
              const Eigen::VectorXd& params_vec, double q, double alpha,
              double c1, double c2, double tol, std::string loss_type,
              double heaviside_k, double heaviside_t);
+
+/**
+ * @brief Minimize the loss associated with the classifier chain network.
+ *
+ * @param X The data matrix, where each column holds the features of a single
+ * observation.
+ * @param params_vec The initial estimate of the model parameters.
+ * @param L The number of labels.
+ * @return The prediction.
+ */
+Eigen::MatrixXd
+ccn_prediction(const Eigen::MatrixXd& X, const Eigen::VectorXd& params_vec,
+               int L);
 
 #endif //CC_NETWORK_H

@@ -1,7 +1,7 @@
 #ifndef SEQUENTIAL_CC_H
 #define SEQUENTIAL_CC_H
 
-#include "Eigen/Eigen"
+#include <Eigen/Dense>
 
 /**
  * @brief Minimize the loss associated with the logistic regression.

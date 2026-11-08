@@ -1,0 +1,7 @@
+# Keep C/C++ sources LF-normalized so the C++ core under ccncpp/ stays
+# byte-identical across platforms (line endings should not differ between
+# Windows and Linux/macOS checkouts).
+* text=auto eol=lf
+*.h   text eol=lf
+*.cpp text eol=lf
+*.py  text eol=lf
