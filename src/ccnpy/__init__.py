@@ -10,7 +10,7 @@ from .estimator import CCN
 from .label_order import conditional_entropy_matrix, entropy_label_order
 from .model_selection import MultilabelStratifiedKFold, ccn_cv
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     "CCN",

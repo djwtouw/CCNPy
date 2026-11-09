@@ -59,6 +59,12 @@ def test_matrix_handles_constant_labels_without_nan():
     assert not np.isnan(conditional_entropy_matrix(np.zeros((5, 3)))).any()
 
 
+def test_matrix_has_no_negative_entries():
+    X, Y = generate_dataset(200, random_state=1)
+    Y[:, 1] = 0.0
+    assert (conditional_entropy_matrix(Y) >= 0.0).all()
+
+
 def test_matrix_diagonal_is_zero_and_shape_is_square():
     X, Y = generate_dataset(100, random_state=1)
     M = conditional_entropy_matrix(Y)

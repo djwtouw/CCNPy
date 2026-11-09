@@ -9,7 +9,7 @@ import numbers
 
 import numpy as np
 from sklearn.model_selection import GridSearchCV
-from sklearn.utils import check_random_state
+from sklearn.utils import check_array, check_random_state
 
 from .estimator import CCN
 from .metrics import SCORERS, get_scorer
@@ -130,6 +130,7 @@ class MultilabelStratifiedKFold:
     Parameters
     ----------
     n_splits : int, default=5
+        Number of folds, at least 2.
     random_state : int, RandomState instance or None, default=None
         Controls the order in which rows are visited and the random
         tie-breaking; the split is stratified either way. ``None`` draws a fresh
@@ -144,7 +145,14 @@ class MultilabelStratifiedKFold:
         return self.n_splits
 
     def split(self, X, y, groups=None):
-        y = np.atleast_2d(np.asarray(y))
+        if not isinstance(self.n_splits, numbers.Integral) or self.n_splits < 2:
+            raise ValueError("n_splits must be an integer of at least 2")
+        y = check_array(y, ensure_2d=False, dtype=np.float64)
+        # A 1D y holds a single label, one entry per observation.
+        if y.ndim == 1:
+            y = y.reshape(-1, 1)
+        if not np.all(np.isin(y, (0.0, 1.0))):
+            raise ValueError("Y must contain only 0 and 1")
         n = y.shape[0]
         all_idx = np.arange(n)
         fold = _multilabel_folds(y, self.n_splits, self.random_state)
@@ -190,13 +198,17 @@ def ccn_cv(X, Y, q, alpha, cv=5, scoring="hamming_accuracy", label_order=None,
     q : float or sequence of float
         Candidate Lq-norm exponents.
     alpha : float or sequence of float
-        Candidate regularization penalties.
+        Candidate regularization penalties. See :class:`CCN` on how the penalty
+        depends on the scale of ``X``.
     cv : int or cross-validation splitter, default=5
         An integer ``k`` uses :class:`MultilabelStratifiedKFold`; a splitter is
         used as given.
     scoring : str or scorer, default="hamming_accuracy"
-        A key of :data:`ccnpy.metrics.SCORERS`, any scikit-learn scoring name,
-        or a scorer object. Higher is better.
+        A key of :data:`ccnpy.metrics.SCORERS`, a scikit-learn scoring name
+        that supports multi-label indicator targets (such as ``"f1_macro"`` or
+        ``"roc_auc"``), or a scorer called as ``scoring(estimator, X, Y)``.
+        Higher is better. Use ``"log_likelihood"`` rather than
+        ``"neg_log_loss"``, which treats ``Y`` as a single multiclass target.
     label_order : sequence or None, default=None
         Candidate chain orders to search over, alongside ``q`` and ``alpha``.
         Each candidate is ``None`` (the column order of ``Y``), a zero-based
@@ -219,6 +231,13 @@ def ccn_cv(X, Y, q, alpha, cv=5, scoring="hamming_accuracy", label_order=None,
 
     Notes
     -----
+    A combination with a failed fit or a NaN score in any fold gets a NaN mean
+    score and is not selected. When no combination can be scored, an error is
+    raised.
+
+    The ``std_test_score`` entries of ``cv_results_`` are population standard
+    deviations across folds (``ddof=0``).
+
     Any :class:`~ccnpy.CCN` parameter can be searched by using
     :class:`GridSearchCV` directly; this function only wires up the common case.
 
@@ -242,6 +261,10 @@ def ccn_cv(X, Y, q, alpha, cv=5, scoring="hamming_accuracy", label_order=None,
     if isinstance(cv, numbers.Integral):
         cv = MultilabelStratifiedKFold(n_splits=int(cv),
                                        random_state=random_state)
+    if scoring == "neg_log_loss":
+        raise ValueError(
+            'neg_log_loss treats Y as a single multiclass target; use '
+            'scoring="log_likelihood" instead')
     if isinstance(scoring, str) and scoring in SCORERS:
         scoring = get_scorer(scoring)
 
@@ -251,6 +274,12 @@ def ccn_cv(X, Y, q, alpha, cv=5, scoring="hamming_accuracy", label_order=None,
         scoring=scoring, cv=cv, refit=True, n_jobs=n_jobs,
     )
     search.fit(X, Y)
+    if not np.isfinite(search.cv_results_["mean_test_score"]).any():
+        raise ValueError(
+            "no combination of tuning parameters could be scored in every "
+            "fold. A scorer is called as scoring(estimator, X, Y): use a name "
+            "from ccnpy.metrics.SCORERS, or wrap a metric function with "
+            "sklearn.metrics.make_scorer")
     return search
 
 

@@ -10,7 +10,9 @@ from sklearn.metrics import f1_score, make_scorer, roc_auc_score
 
 
 def _as2d(a):
-    return np.atleast_2d(np.asarray(a))
+    """``a`` as an (n, L) array; a 1D array holds a single label."""
+    a = np.asarray(a)
+    return a.reshape(-1, 1) if a.ndim == 1 else a
 
 
 def hamming_accuracy(y_true, y_pred):

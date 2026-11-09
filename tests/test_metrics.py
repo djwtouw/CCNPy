@@ -71,6 +71,19 @@ def test_mean_auc_skips_single_class_labels():
     assert metrics.mean_auc(y_true, y_prob) == pytest.approx(1.0)
 
 
+@pytest.mark.parametrize("metric", [
+    metrics.hamming_accuracy, metrics.exact_match, metrics.micro_f1,
+    metrics.macro_f1, metrics.log_likelihood, metrics.mean_auc,
+])
+def test_one_dimensional_input_is_a_single_label(metric):
+    rng = np.random.default_rng(0)
+    y_true = rng.integers(0, 2, 50)
+    y_pred = rng.random(50)
+    if metric not in (metrics.log_likelihood, metrics.mean_auc):
+        y_pred = (y_pred >= 0.5).astype(int)
+    assert metric(y_true, y_pred) == metric(y_true[:, None], y_pred[:, None])
+
+
 def test_scorer_registry():
     assert set(metrics.SCORERS) == {
         "hamming_accuracy", "exact_match", "micro_f1", "macro_f1",

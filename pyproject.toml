@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ccnpy"
-version = "0.2.0"
+version = "0.3.0"
 description = "Classifier Chain Network for multi-label classification"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -26,7 +26,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-test = ["pytest>=7"]
+test = ["pytest>=7", "pandas"]
 
 [project.urls]
 Homepage = "https://github.com/djwtouw/CCNPy"

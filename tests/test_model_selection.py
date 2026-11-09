@@ -63,6 +63,35 @@ def test_splitter_rejects_too_many_splits():
         _multilabel_folds(np.array([[1, 0], [0, 1], [1, 1]]), 5, None)
 
 
+@pytest.mark.parametrize("n_splits", [1, 0, 2.5])
+def test_splitter_rejects_invalid_n_splits(n_splits):
+    X, Y = generate_dataset(30, random_state=0)
+    with pytest.raises(ValueError, match="at least 2"):
+        next(MultilabelStratifiedKFold(n_splits).split(X, Y))
+
+
+@pytest.mark.parametrize("bad", [2.0, 3.0, np.nan])
+def test_splitter_rejects_non_binary_y(bad):
+    X, Y = generate_dataset(30, random_state=0)
+    Y = np.where(Y == 1, bad, 0.0)
+    with pytest.raises(ValueError):
+        next(MultilabelStratifiedKFold(3).split(X, Y))
+
+
+def test_splitter_reads_one_dimensional_y_as_a_single_label():
+    X, Y = generate_dataset(60, random_state=0)
+    a = MultilabelStratifiedKFold(3, random_state=1).split(X, Y[:, 0])
+    b = MultilabelStratifiedKFold(3, random_state=1).split(X, Y[:, :1])
+    for (_, test_a), (_, test_b) in zip(a, b):
+        assert np.array_equal(test_a, test_b)
+
+
+def test_ccn_cv_rejects_non_binary_y():
+    X, Y = make_xy(n=60, seed=1)
+    with pytest.raises(ValueError, match="only 0 and 1"):
+        ccn_cv(X, 2 * Y, q=1.0, alpha=0.1, cv=3)
+
+
 def test_ties_are_broken_randomly():
     """Ties vary the split even when the visiting order is held fixed."""
     # All candidates stay tied, because every row carries every label.
@@ -100,3 +129,51 @@ def test_ccn_cv_forwards_ccn_kwargs():
     search = ccn_cv(X, Y, q=[1.0], alpha=[0.1], cv=3, n_starts=2,
                     random_state=0)
     assert search.best_estimator_.n_starts == 2
+
+
+def test_ccn_cv_does_not_select_a_grid_point_with_a_failed_fit():
+    from sklearn.exceptions import FitFailedWarning
+    from sklearn.model_selection import PredefinedSplit
+    X, Y = make_xy(n=40, m=2, L=2, seed=5)
+    # Unequal folds make the training size identify the fold, so this order
+    # fails in the first fold only
+    cv = PredefinedSplit(np.repeat([0, 1, 2], [10, 15, 15]))
+
+    def flaky(X, Y):
+        if X.shape[0] == 30:
+            raise RuntimeError("fails in fold 0")
+        return np.arange(Y.shape[1])
+
+    with pytest.warns(FitFailedWarning, match="fits failed"), \
+            pytest.warns(UserWarning, match="non-finite"):
+        search = ccn_cv(X, Y, q=1.0, alpha=0.01, cv=cv,
+                        label_order=[None, flaky])
+    scores = search.cv_results_["mean_test_score"]
+    assert np.isnan(scores[1])
+    assert search.best_params_["label_order"] is None
+
+
+def test_ccn_cv_rejects_neg_log_loss():
+    X, Y = make_xy(n=60, seed=1)
+    with pytest.raises(ValueError, match="log_likelihood"):
+        ccn_cv(X, Y, q=1.0, alpha=0.1, cv=3, scoring="neg_log_loss")
+
+
+def test_ccn_cv_stops_when_no_grid_point_can_be_scored():
+    from ccnpy.metrics import hamming_accuracy
+    X, Y = make_xy(n=60, seed=1)
+    # A plain metric function is not a scorer, so every fold scores NaN.
+    with pytest.warns(UserWarning), \
+            pytest.raises(ValueError, match="make_scorer"):
+        ccn_cv(X, Y, q=1.0, alpha=[0.01, 0.1], cv=3,
+               scoring=hamming_accuracy)
+
+
+def test_ccn_cv_stops_when_every_fit_fails():
+    X, Y = make_xy(n=40, m=2, L=2, seed=5)
+
+    def broken(X, Y):
+        raise RuntimeError("always fails")
+
+    with pytest.raises(ValueError, match="fits failed"):
+        ccn_cv(X, Y, q=1.0, alpha=0.01, cv=3, label_order=[broken])

@@ -204,6 +204,7 @@ python examples/example_amphibians.py
 | `predict(fit, type = "response")` | `model.predict_proba(X)` |
 | `coef(fit)` | `model.coef_` |
 | `ccn_cv(...)` | `ccn_cv(...)` or `GridSearchCV` |
+| `multilabel_stratified_folds(y, folds)` | `MultilabelStratifiedKFold(n_splits)` |
 | `ccn_hamming_accuracy`, ... | `ccnpy.metrics.*` |
 | `generate_dataset(n)` | `generate_dataset(n)` |
 | `data(amphibians)` | `load_amphibians()` |
