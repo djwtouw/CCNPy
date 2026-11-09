@@ -1,7 +1,9 @@
-"""Synthetic multi-label data generation."""
+"""Multi-label data sets: a synthetic generator and a bundled real data set."""
+
+from importlib.resources import files
 
 import numpy as np
-from sklearn.utils import check_random_state
+from sklearn.utils import Bunch, check_random_state
 
 
 def generate_dataset(n, random_state=None):
@@ -48,3 +50,69 @@ def generate_dataset(n, random_state=None):
         Y[:, i] = (rng.random(n) < probs).astype(float)
 
     return X, Y
+
+
+def load_amphibians(return_X_y=False):
+    """Load the amphibians multi-label data set.
+
+    The data describe 189 water reservoirs in Poland. The explanatory variables
+    summarize the site: the size and type of the reservoir, the surrounding
+    land use, and the proximity of roads and buildings. The seven binary labels
+    record whether a given amphibian species is present. Species prevalence
+    differs considerably, from 78% for the brown frog down to 11% for the great
+    crested newt, which makes the data set a realistic illustration of
+    multi-label problems with rare labels.
+
+    The raw data hold 15 site characteristics, 10 of which are categorical.
+    After one-hot encoding those, 56 variables remain. Principal component
+    analysis is applied to the centered and scaled variables, and the smallest
+    number of components explaining at least 80% of the total variance is
+    retained. This leaves 25 components at 82%.
+
+    Parameters
+    ----------
+    return_X_y : bool, default=False
+        If True, return ``(X, Y)`` instead of a Bunch.
+
+    Returns
+    -------
+    data : :class:`~sklearn.utils.Bunch`
+        With the fields
+
+        data : ndarray of shape (189, 25)
+            Principal components ``PC1`` to ``PC25``.
+        target : ndarray of shape (189, 7)
+            Species presence (values in {0, 1}).
+        feature_names : list of str
+            ``["PC1", ..., "PC25"]``.
+        target_names : list of str
+            ``GreenFrog`` (green frogs), ``BrownFrog`` (brown frogs), ``Toad``
+            (common toad), ``FireToad`` (fire-bellied toad), ``TreeFrog``
+            (tree frog), ``Newt`` (common newt), and ``CrestNewt`` (great
+            crested newt).
+    (X, Y) : tuple of ndarray
+        Returned instead of the Bunch when ``return_X_y`` is True.
+
+    References
+    ----------
+    UCI Machine Learning Repository, Amphibians data set,
+    doi:10.24432/C5H90N.
+
+    Blachnik, M., Soltysiak, M., and Dabrowska, D. (2019). Predicting presence
+    of amphibian species using features obtained from GIS and satellite
+    images. ISPRS International Journal of Geo-Information, 8(3), 123,
+    doi:10.3390/ijgi8030123.
+    """
+    path = files("ccnpy").joinpath("data").joinpath("amphibians.csv")
+    with path.open("r") as f:
+        names = f.readline().strip().split(",")
+        values = np.loadtxt(f, delimiter=",")
+
+    n_features = 25
+    X = values[:, :n_features]
+    Y = values[:, n_features:].astype(int)
+
+    if return_X_y:
+        return X, Y
+    return Bunch(data=X, target=Y, feature_names=names[:n_features],
+                 target_names=names[n_features:])

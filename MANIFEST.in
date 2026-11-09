@@ -7,6 +7,9 @@ include pyproject.toml setup.py
 recursive-include ccncpp *.h *.cpp
 recursive-include src/ccnpy *.cpp
 
+# Bundled data sets.
+recursive-include src/ccnpy/data *.csv
+
 # Vendored Eigen, when present (git submodule at extern/eigen).
 recursive-include extern/eigen *
 

@@ -86,7 +86,8 @@ def conditional_entropy_matrix(Y):
               + _contribution(n01, n, 1.0 - p1)
               + _contribution(n00, n, 1.0 - p1))
     np.fill_diagonal(result, 0.0)
-    return result
+    # Rounding can leave an entropy a hair below zero.
+    return np.maximum(result, 0.0)
 
 
 def _marginal_entropy(Y):

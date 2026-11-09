@@ -53,6 +53,16 @@ def test_threshold_validation(fitted):
         m.predict(X, threshold=np.array([0.5, 0.5]))  # wrong length
 
 
+@pytest.mark.parametrize("threshold", [
+    [2.0, 0.5, 0.5, 0.5], [0.5, -1.0, 0.5, 0.5], [0.5, np.nan, 0.5, 0.5],
+    np.nan, "0.5",
+])
+def test_threshold_rejects_values_outside_the_unit_interval(fitted, threshold):
+    m, X, _ = fitted
+    with pytest.raises(ValueError, match="strictly between 0 and 1"):
+        m.predict(X, threshold=threshold)
+
+
 def test_label_order_roundtrip_changes_chain_not_output_shape(data):
     X, Y = data
     L = Y.shape[1]
@@ -69,6 +79,33 @@ def test_invalid_label_order(data):
         CCN(label_order=[0, 0, 1, 2]).fit(X, Y)
 
 
+@pytest.mark.parametrize("order", [[3.5, 0, 2, 1], ["3", "0", "2", "1"]])
+def test_label_order_must_hold_whole_numbers(data, order):
+    X, Y = data
+    with pytest.raises(ValueError, match="permutation"):
+        CCN(label_order=order).fit(X, Y)
+
+
+def test_label_order_accepts_whole_floats(data):
+    X, Y = data
+    m = CCN(label_order=[3.0, 0.0, 2.0, 1.0]).fit(X, Y)
+    assert m.label_order_.tolist() == [3, 0, 2, 1]
+
+
+def test_one_dimensional_y_is_a_single_label(data):
+    pd = pytest.importorskip("pandas")
+    X, Y = data
+    reference = CCN(q=1.0, alpha=0.01).fit(X, Y[:, :1])
+    assert reference.n_labels_ == 1
+    for y in (Y[:, 0], pd.Series(Y[:, 0]), list(Y[:, 0])):
+        m = CCN(q=1.0, alpha=0.01).fit(X, y)
+        assert m.n_labels_ == 1
+        assert np.array_equal(m.coefficients_flat_,
+                              reference.coefficients_flat_)
+        assert m.predict(X).shape == (X.shape[0], 1)
+        assert m.predict_proba(X).shape == (X.shape[0], 1)
+
+
 def test_rejects_non_binary_y(data):
     X, Y = data
     Y2 = Y.copy()
@@ -78,13 +115,25 @@ def test_rejects_non_binary_y(data):
 
 
 @pytest.mark.parametrize("kwargs", [
-    {"q": 0.5}, {"alpha": -1}, {"tol": 0}, {"n_starts": 0},
-    {"c1": 0.9, "c2": 0.1}, {"loss_type": "bogus"},
+    {"q": 0.5}, {"q": np.inf}, {"alpha": -1}, {"tol": 0}, {"tol": -1},
+    {"n_starts": 0}, {"n_starts": 2.5}, {"n_starts": None},
+    {"restart_scale": [1, 2]}, {"c1": 0.9, "c2": 0.1},
 ])
 def test_parameter_validation(data, kwargs):
     X, Y = data
     with pytest.raises(ValueError):
         CCN(**kwargs).fit(X, Y)
+
+
+def test_rejects_infinite_values(data):
+    X, Y = data
+    X_inf = X.copy()
+    X_inf[0, 0] = np.inf
+    with pytest.raises(ValueError, match="infinity"):
+        CCN().fit(X_inf, Y)
+    m = CCN().fit(X, Y)
+    with pytest.raises(ValueError, match="infinity"):
+        m.predict(X_inf)
 
 
 def test_n_starts_improves_or_matches_loss(data):
