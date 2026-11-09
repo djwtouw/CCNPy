@@ -210,6 +210,19 @@ def test_callable_label_order_predicts_in_original_column_order():
     assert model.predict(X).shape == natural.predict(X).shape
 
 
+def test_label_order_matches_permuting_the_columns_of_y():
+    # Both fits run the same chain, so their probabilities agree once the
+    # output of the first is put in chain order.
+    X, Y = generate_dataset(150, random_state=12)
+    order = [3, 0, 2, 1]
+    by_order = CCN(q=1.0, alpha=0.01, label_order=order).fit(X, Y)
+    by_columns = CCN(q=1.0, alpha=0.01).fit(X, Y[:, order])
+    np.testing.assert_allclose(by_order.fitted_proba_[:, order],
+                               by_columns.fitted_proba_)
+    np.testing.assert_allclose(by_order.predict_proba(X)[:, order],
+                               by_columns.predict_proba(X))
+
+
 # -- ccn_cv over candidate orders ------------------------------------------
 
 def test_ccn_cv_searches_over_label_orders():
